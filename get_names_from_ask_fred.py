@@ -1,6 +1,4 @@
 import argparse
-from asyncio import base_events
-from re import L
 import requests
 from bs4 import BeautifulSoup
 
