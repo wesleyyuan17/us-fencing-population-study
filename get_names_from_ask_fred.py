@@ -21,7 +21,7 @@ if __name__ == '__main__':
         response = requests.get(base_url.format(args.weapon, i))
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        if (soup.find('h3') is None )and (soup.find('h3').text != 'No tournaments were found.'):
+        if (soup.find('h3') is None ) and (soup.find('h3').text != 'No tournaments were found.'):
             # still tournaments being shown
             tournament_result_links += [a['href'] for a in soup.find('table', {'id': 'past-tours'}).findAll('a') if 'results' in a['href']]
         else:
