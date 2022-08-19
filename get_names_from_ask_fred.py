@@ -15,6 +15,7 @@ if __name__ == '__main__':
 
     tournament_result_links = []
     # for i in range(10):
+    i = 1
     while True:
         response = requests.get(base_url.format(args.weapon, i))
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -25,6 +26,8 @@ if __name__ == '__main__':
         else:
             # end of all tournaments in history for search, end
             break
+
+        i += 1
 
     with open('touranment_result_links.txt', 'w') as f:
         f.write('\n'.join(tournament_result_links))
