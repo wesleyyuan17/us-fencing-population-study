@@ -16,11 +16,17 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     tournament_result_links = []
-    for i in range(10):
+    # for i in range(10):
+    while True:
         response = requests.get(base_url.format(args.weapon, i))
         soup = BeautifulSoup(response.text, 'html.parser')
-
-        tournament_result_links += [a['href'] for a in soup.find('table', {'id': 'past-tours'}).findAll('a') if 'results' in a['href']]
+        
+        if (soup.find('h3') is None )and (soup.find('h3').text != 'No tournaments were found.'):
+            # still tournaments being shown
+            tournament_result_links += [a['href'] for a in soup.find('table', {'id': 'past-tours'}).findAll('a') if 'results' in a['href']]
+        else:
+            # end of all tournaments in history for search, end
+            break
 
     with open('touranment_result_links.txt', 'w') as f:
         f.write('\n'.join(tournament_result_links))
@@ -36,4 +42,3 @@ if __name__ == '__main__':
 
     with open('names.txt', 'w') as f:
         f.write('\n'.join(names))
-        
