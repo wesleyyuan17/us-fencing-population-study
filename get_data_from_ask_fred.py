@@ -34,7 +34,11 @@ def get_event_info(tournament_page):
     Args:
         tournament_page: BeautifulSoup object, parsed BeautifulSoup object of tournament results page
     '''
-    date, location = tournament_page.find('div', {'id': 'results-head'}).text.split('\n')[1:3]
+    info = tournament_page.find('div', {'id': 'results-head'})
+    if info is None:
+        return None, None
+
+    date, location = info.text.split('\n')[1:3]
     return date, location
 
 
@@ -66,41 +70,40 @@ if __name__ == '__main__':
 
     print('Getting results from tournaments...')
     dfs = []
-    for link in tqdm(tournament_result_links[:100]):
-        try:
-            response = requests.get(link)
-            soup = BeautifulSoup(response.text, 'html.parser')
+    for link in tqdm(tournament_result_links):
+        response = requests.get(link)
+        soup = BeautifulSoup(response.text, 'html.parser')
 
-            rows = [r.text.strip() for t in soup.findAll('table', {'class': 'box'}) for r in t.findAll('tr')]
+        rows = [r.text.strip() for t in soup.findAll('table', {'class': 'box'}) for r in t.findAll('tr')]
+        if len(rows) < 1:
+            continue
 
-            date, location = get_event_info(soup)
-            category, n, rating = get_event_type(rows[0])
-            if category == 'Team Event':
+        date, location = get_event_info(soup)
+        category, n, rating = get_event_type(rows[0])
+        if category == 'Team Event':
+            continue
+
+        data = []
+        for r in rows:
+            if ':' in r:
+                # get event info but don't add it as a row
+                category, n, rating = get_event_type(r)
+                continue
+            
+            if 'Rating Earned' in r:
+                # skip column header
                 continue
 
-            data = []
-            for r in rows:
-                if ':' in r:
-                    # get event info but don't add it as a row
-                    category, n, rating = get_event_type(r)
-                    continue
-                
-                if 'Rating Earned' in r:
-                    # skip column header
-                    continue
+            if 'Results not posted yet.' in r:
+                # skip tables where organizers didn't put in information
+                continue
+            
+            row_data = [t.strip() for t in r.split('\n') if t != '']
+            if len(row_data) < 6:
+                row_data += ['']
+            data.append([date, location, category, n, rating] + row_data)
 
-                if 'Results not posted yet.' in r:
-                    # skip tables where organizers didn't put in information
-                    continue
-                
-                row_data = [t.strip() for t in r.split('\n') if t != '']
-                if len(row_data) < 6:
-                    row_data += ['']
-                data.append([date, location, category, n, rating] + row_data)
-
-            dfs.append(pd.DataFrame(data, columns=['Date', 'Location', 'Event', 'NumCompetitors', 'EventRating', 'Place', 'Name', 'ClubAbbr', 'Club', 'Rating', 'RatingEarned']))
-        except:
-            print(link)
+        dfs.append(pd.DataFrame(data, columns=['Date', 'Location', 'Event', 'NumCompetitors', 'EventRating', 'Place', 'Name', 'ClubAbbr', 'Club', 'Rating', 'RatingEarned']))
 
     out = pd.concat(dfs, ignore_index=True)
 
